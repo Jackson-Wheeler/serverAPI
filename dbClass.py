@@ -7,6 +7,8 @@ import sys
 import pymysql
 from pymysql import Error
 
+ssh_tunnel = True
+
 '''
 for remote access - add HOSTNAME=localhost to env  
 ssh -L 8676:127.0.0.1:3306 ialerner@cse191.ucsd.edu
@@ -23,7 +25,8 @@ class dbClass:
         self.dbname = "cse191"
         self.port = 3306
 
-        if os.getenv('HOSTNAME') == "localpc":
+        # if os.getenv('HOSTNAME') == "localhost":
+        if ssh_tunnel:
             print("connect local ssh tunnel")
             self.port = 8676
 
@@ -69,21 +72,46 @@ class dbClass:
 
         print("Success\n")
 
-    def loadStudents(self):
+    def loadStudents(self, gn: int):
         if self.check_conn():
             stu_df = pd.DataFrame
-            sqlStr = "SELECT * FROM cse191.students ORDER BY groupnumber"
+            if (gn is None):
+                sqlStr = "SELECT * FROM cse191.students ORDER BY groupnumber"
+            else:
+                sqlStr = "SELECT * FROM cse191.students WHERE groupnumber={0} ORDER BY groupnumber".format(gn)
             print(sqlStr)
             cursor = self.db.cursor()
             result = None
             try:
                 cursor.execute(sqlStr)
                 result = cursor.fetchall()
-                print(result)
+                # print(result)
                 stu_df = pd.DataFrame.from_dict(result) 
                 stu_df.columns=["id","name","email","groupnumber","groupname"]
-                print(stu_df)
+                # print(stu_df)
             except Error as e:
                 print(f"The error '{e}' occurred")
 
             return stu_df
+
+    def loadDevices(self, gn: int):
+        if self.check_conn():
+            dev_df = pd.DataFrame
+            if (gn is None):
+                sqlStr = "SELECT * FROM cse191.devices ORDER BY groupnumber"
+            else:
+                sqlStr = "SELECT * FROM cse191.devices WHERE groupnumber={0} ORDER BY groupnumber".format(gn)
+            print(sqlStr)
+            cursor = self.db.cursor()
+            result = None
+            try:
+                cursor.execute(sqlStr)
+                result = cursor.fetchall()
+                # print(result)
+                dev_df = pd.DataFrame.from_dict(result) 
+                dev_df.columns=["device_id","mac","lastseen_ts","last_rssi","groupname", "location", "lang", "long", "color", "groupnumber"]
+                # print(dev_df)
+            except Error as e:
+                print(f"The error '{e}' occurred")
+
+            return dev_df
