@@ -1,14 +1,15 @@
 import json
-from typing import Union
-import pandas as pd
+from typing import Union, List
+# import pandas as pd
 
 import uvicorn
 from fastapi import FastAPI, Response
 from fastapi.responses import PlainTextResponse
 from starlette.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+# from pydantic import BaseModel
 
 from dbClass import dbClass
+from common import *
 
 app = FastAPI()
 
@@ -33,12 +34,7 @@ def setHeaders(response: Response):
     response.headers['Access-Control-Allow-Headers'] = 'Origin,X-Requested-With,Content-Type,Authorization,Accept'
     response.headers['Access-Control-Allow-Methods'] = 'OPTIONS,GET,PUT,POST,DELETE'
     response.headers['Service'] = 'CSE191-G00-API'
-
-
-class DeviceInfo(BaseModel):
-    group_id: str
-    mac: str
-
+    
 
 @app.get('/', response_class=PlainTextResponse)
 def home():
@@ -71,10 +67,23 @@ def process_list_device(response: Response, gn: Union[int, None] = None, outtype
         dl_string = device_list.to_string()
     return dl_string
 
-@app.post('/register-device')
-def process_register_device(response: Response, data: DeviceInfo):
+@app.get('/list-ble-logs', response_class=PlainTextResponse)
+def process_list_ble_logs(response: Response, gn: Union[int, None] = None, outtype: Union[str, None] = None):
     setHeaders(response)
-    return {"resp": "OK"}
+    ble_log_list = cse191db.loadBleLogs(gn)
+    if outtype == "JSON":
+        dl_string = ble_log_list.to_json(orient="records")
+    else:
+        dl_string = ble_log_list.to_string()
+    return dl_string
+
+@app.post('/log-devices')
+def process_log_device(response: Response, data: LogInfo):
+    setHeaders(response)  
+    if cse191db.logDevices(data):
+        return {"resp": "OK"}
+    else:
+        return {"resp": "FAIL"}
 
 
 # run the app

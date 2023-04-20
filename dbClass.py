@@ -7,11 +7,13 @@ import sys
 import pymysql
 from pymysql import Error
 
-ssh_tunnel = True
+from common import *
+
+ssh_tunnel = False
 
 '''
 for remote access - add HOSTNAME=localhost to env  
-ssh -L 8676:127.0.0.1:3306 ialerner@cse191.ucsd.edu
+ssh -L 8676:127.0.0.1:3306 group03@cse191.ucsd.edu
 '''
 class dbClass:
 
@@ -115,3 +117,47 @@ class dbClass:
                 print(f"The error '{e}' occurred")
 
             return dev_df
+        
+    def loadBleLogs(self, gn: int):
+        if self.check_conn():
+            ble_logs_df = pd.DataFrame
+            if (gn is None):
+                sqlStr = "SELECT * FROM cse191.ble_logs"
+            else:
+                sqlStr = "SELECT * FROM cse191.ble_logs WHERE groupnumber={0}".format(gn)
+            print(sqlStr)
+            cursor = self.db.cursor()
+            result = None
+            try:
+                cursor.execute(sqlStr)
+                result = cursor.fetchall()
+                # print(result)
+                ble_logs_df = pd.DataFrame.from_dict(result) 
+                ble_logs_df.columns=["log_id","device_mac","ble_rssi","ble_mac","groupname", "log_ts", "ble_count"]
+                # print(ble_logs_df)
+            except Error as e:
+                print(f"The error '{e}' occurred")
+
+            return ble_logs_df
+        
+
+    def logDevices(self, data: LogInfo):
+        if self.check_conn():
+            groupname = "threefoldCord"
+            dev_df = pd.DataFrame
+            # For each BLEDevice, insert it into DB's ble_logs table
+            for device in data.devices:
+                sqlStr = "INSERT INTO cse191.ble_logs (device_mac, ble_rssi, ble_mac, groupname) VALUES ('{0}', '{1}', '{2}', '{3}');".format(data.espmac, device.rssi, device.mac, groupname)
+                print(sqlStr)
+                cursor = self.db.cursor()
+                try:
+                    cursor.execute(sqlStr)
+                    result = cursor.fetchall()
+                    self.db.commit()
+                    print(result)
+                except Error as e:
+                    print(f"The error '{e}' occurred")
+                    return False
+            return True
+        # if check_conn() fails
+        else: return False
