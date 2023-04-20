@@ -61,7 +61,7 @@ def process_list_students(response: Response, outtype: Union[str, None] = None):
         sl_string = student_list.to_string()
     return sl_string
 
-@app.post('/list-device')
+@app.get('/list-devices')
 def process_list_device(response: Response, data: DeviceInfo):
     setHeaders(response)
     return {"resp": "OK"}
