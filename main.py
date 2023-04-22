@@ -38,7 +38,7 @@ def setHeaders(response: Response):
 
 @app.get('/', response_class=PlainTextResponse)
 def home():
-    return 'Group00 API\n'
+    return 'Group03 API\n'
 
 
 @app.get('/health')
